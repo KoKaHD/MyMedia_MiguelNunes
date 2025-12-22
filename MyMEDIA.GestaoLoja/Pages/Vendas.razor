@@ -1,0 +1,89 @@
+﻿@page "/vendas"
+@using Microsoft.EntityFrameworkCore
+@using MyMEDIA.Identity
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+
+<h3>Gestão de Vendas</h3>
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th>Total</th>
+            <th>Pago</th>
+            <th>Expedido</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var v in vendas)
+        {
+            <tr>
+                <td>@v.Id</td>
+                <td>@v.User.Email</td>
+                <td>@v.DataCriacao.ToString("g")</td>
+                <td>@v.Total.ToString("C")</td>
+                <td>
+                    <span class="badge bg-@(v.Pago ? "success" : "danger")">@(v.Pago ? "Sim" : "Não")</span>
+                </td>
+                <td>
+                    <span class="badge bg-@(v.Expedido ? "success" : "warning")">@(v.Expedido ? "Sim" : "Não")</span>
+                </td>
+                <td>
+                    <a href="vendas/@v.Id" class="btn btn-sm btn-info">Ver</a>
+                    @if (v.Pago && !v.Expedido)
+                    {
+                        <button class="btn btn-sm btn-primary ms-1" @onclick="() => Expedir(v.Id)">Expedir</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<EncomendaVenda> vendas = new();
+
+    protected override async Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        vendas = await Db.Encomendas
+            .Include(e => e.User)
+            .OrderByDescending(e => e.DataCriacao)
+            .Select(e => new EncomendaVenda
+            {
+                Id = e.Id,
+                User = e.User,
+                DataCriacao = e.DataCriacao,
+                Total = e.Total,
+                Pago = e.Pago,
+                Expedido = e.Expedido
+            })
+            .ToListAsync();
+    }
+
+    private async Task Expedir(int id)
+    {
+        var enc = await Db.Encomendas.FindAsync(id);
+        if (enc == null || enc.Expedido) return;
+
+        enc.Expedido = true;
+        await Db.SaveChangesAsync();
+        await Load();
+    }
+
+    // DTO local rápido
+    private class EncomendaVenda
+    {
+        public int Id { get; set; }
+        public ApplicationUser User { get; set; } = null!;
+        public DateTime DataCriacao { get; set; }
+        public decimal Total { get; set; }
+        public bool Pago { get; set; }
+        public bool Expedido { get; set; } = false;
+    }
+}

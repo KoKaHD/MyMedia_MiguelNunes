@@ -1,0 +1,41 @@
+﻿@page "/"
+@inject ApiService Api
+@inject CarrinhoState Carrinho
+
+<h3>Destaques</h3>
+
+@if (destaques == null)
+{
+    <Loader />
+}
+else
+{
+    <div class="row">
+        @foreach (var p in destaques)
+        {
+            <div class="col-md-3 mb-3">
+                <ProdutoCard Produto="p" OnAdicionarCarrinho="Carrinho.Adicionar" />
+            </div>
+        }
+    </div>
+}
+
+<h3>Categorias</h3>
+<div class="btn-group mb-3">
+    @foreach (var c in categorias)
+    {
+        <a href="produtos/@c.Id" class="btn btn-outline-primary">@c.Nome</a>
+    }
+</div>
+
+@code {
+    private List<ProdutoDTO>? destaques;
+    private List<CategoriaDto>? categorias;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var todos = await Api.GetProdutosAsync(null, null);
+        destaques = todos?.OrderBy(_ => Guid.NewGuid()).Take(4).ToList();
+        categorias = await Api.GetCategoriasAsync();
+    }
+}

@@ -1,0 +1,18 @@
+﻿<div class="produto-card">
+    <img src="@Imagem" alt="@Produto.Nome" />
+    <h5>@Produto.Nome</h5>
+    <p class="preco">@Produto.PrecoFinal.ToString("C")</p>
+    <button class="btn btn-primary" @onclick="OnAdicionar">Adicionar</button>
+</div>
+
+@code {
+    [Parameter] public ProdutoDTO Produto { get; set; } = default!;
+    [Parameter] public EventCallback<ProdutoDTO> OnAdicionarCarrinho { get; set; }
+
+    private string Imagem => string.IsNullOrEmpty(Produto.ImagemUrl)
+        ? "_content/MyMEDIA.Shared/images/placeholder.png"
+        : Produto.ImagemUrl;
+
+    private async Task OnAdicionar() =>
+        await OnAdicionarCarrinho.InvokeAsync(Produto);
+}

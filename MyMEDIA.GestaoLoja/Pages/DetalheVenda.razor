@@ -1,0 +1,77 @@
+﻿@page "/vendas/{id:int}"
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+@inject NavigationManager Nav
+
+@if (venda == null) return;
+
+<h3>Detalhe da Venda #@venda.Id</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Dados da Encomenda</h5>
+        <p><strong>Cliente:</strong> @venda.User.Email</p>
+        <p><strong>Data:</strong> @venda.DataCriacao.ToString("g")</p>
+        <p><strong>Total:</strong> @venda.Total.ToString("C")</p>
+        <p><strong>Pago:</strong> @(venda.Pago ? "✅ Sim" : "❌ Não")</p>
+        <p><strong>Expedido:</strong> @(venda.Expedido ? "✅ Sim" : "⏳ Não")</p>
+    </div>
+    <div class="col-md-6">
+        <h5>Morada de Entrega</h5>
+        <p>@venda.Morada</p>
+        <p>@venda.Cidade</p>
+        <p>@venda.CodigoPostal</p>
+    </div>
+</div>
+
+<h5>Produtos</h5>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Preço Unit.</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in itens)
+        {
+            <tr>
+                <td>@item.Produto.Nome</td>
+                <td>@item.Quantidade</td>
+                <td>@item.PrecoUnitario.ToString("C")</td>
+                <td>@((item.Quantidade * item.PrecoUnitario).ToString("C"))</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="text-end">
+    <button class="btn btn-secondary" @onclick="() => Nav.NavigateTo('/vendas')">Voltar</button>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Encomenda? venda;
+    private List<ItemEncomenda> itens = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        venda = await Db.Encomendas
+            .Include(e => e.User)
+            .FirstOrDefaultAsync(e => e.Id == Id);
+
+        if (venda == null)
+        {
+            Nav.NavigateTo("/vendas");
+            return;
+        }
+
+        itens = await Db.ItensEncomenda
+            .Include(i => i.Produto)
+            .Where(i => i.EncomendaId == Id)
+            .ToListAsync();
+    }
+}

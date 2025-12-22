@@ -1,0 +1,160 @@
+﻿@page "/fornecedores-gestao"
+@using Microsoft.AspNetCore.Identity
+@using MyMEDIA.Domain.Enums
+@using MyMEDIA.GestaoLoja.DTOs
+@using MyMEDIA.Identity
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject UserManager<ApplicationUser> UserManager
+@inject MyMediaDbContext Db
+
+<h3>Gestão de Fornecedores</h3>
+
+<h5>Pendentes / Sem associação</h5>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Fornecedor</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var f in lista)
+        {
+            <tr>
+                <td>@f.NomeCompleto</td>
+                <td>@f.Email</td>
+                <td>
+                    @if (f.FornecedorId == null)
+                    {
+                        <select class="form-select form-select-sm" @bind="f.FornecedorId">
+                            <option value="">-- escolher --</option>
+                            @foreach (var forn in fornecedores)
+                            {
+                                <option value="@forn.Id">@forn.Nome</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <span>@f.FornecedorNome</span>
+                    }
+                </td>
+                <td>
+                    @if (f.FornecedorId != null)
+                    {
+                        <button class="btn btn-sm btn-success" @onclick="() => Associar(f)">Ativar</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<hr />
+
+<h5>Produtos por Fornecedor</h5>
+<select class="form-select w-25 mb-2" @bind="fornSel" @onchange="LoadProdutos">
+    <option value="">-- selecionar --</option>
+    @foreach (var f in fornecedores)
+    {
+        <option value="@f.Id">@f.Nome</option>
+    }
+</select>
+
+@if (produtos != null)
+{
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nome</th>
+                <th>Preço Base</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in produtos)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Nome</td>
+                    <td>@p.PrecoBase.ToString("C")</td>
+                    <td>
+                        <span class="badge bg-@(p.Estado==EstadoProdutoEnum.Pendente?"warning":"success")">
+                            @p.Estado
+                        </span>
+                    </td>
+                    <td>
+                        @if (p.Estado == EstadoProdutoEnum.Pendente)
+                        {
+                            <button class="btn btn-sm btn-primary" @onclick="() => AtivarProd(p.Id)">Ativar</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<FornecedorAssocDto> lista = new();
+    private List<Fornecedor> fornecedores = new();
+    private int? fornSel;
+    private List<Produto>? produtos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        fornecedores = await Db.Fornecedores.OrderBy(f => f.Nome).ToListAsync();
+        await LoadPendentes();
+    }
+
+    private async Task LoadPendentes()
+    {
+        var users = await UserManager.Users
+            .Where(u => u.TipoUtilizador == "Fornecedor" && u.Estado == "Pendente")
+            .ToListAsync();
+
+        lista = users.Select(u => new FornecedorAssocDto
+        {
+            UserId = u.Id,
+            NomeCompleto = u.NomeCompleto,
+            Email = u.Email,
+            FornecedorId = u.FornecedorId,
+            FornecedorNome = fornecedores.FirstOrDefault(f => f.Id == u.FornecedorId)?.Nome ?? ""
+        }).ToList();
+    }
+
+    private async Task Associar(FornecedorAssocDto dto)
+    {
+        if (dto.FornecedorId == null) return;
+
+        var user = await UserManager.FindByIdAsync(dto.UserId);
+        if (user == null) return;
+
+        user.FornecedorId = dto.FornecedorId;
+        user.Estado = "Ativo";
+        await UserManager.UpdateAsync(user);
+        await LoadPendentes();
+    }
+
+    private async Task LoadProdutos()
+    {
+        if (fornSel == null) return;
+        produtos = await Db.Produtos
+            .Where(p => p.FornecedorId == fornSel)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+    }
+
+    private async Task AtivarProd(int id)
+    {
+        var p = await Db.Produtos.FindAsync(id);
+        if (p == null) return;
+        p.Estado = EstadoProdutoEnum.Ativo;
+        await Db.SaveChangesAsync();
+        await LoadProdutos();
+    }
+}

@@ -1,0 +1,32 @@
+@page "/produto/{id:int}"
+@inject HttpClient Http
+
+@if (produto == null)
+{
+    <Loader />
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <img class="img-fluid" src="@produto.ImagemUrl" alt="@produto.Nome" />
+        </div>
+        <div class="col-md-6">
+            <h3>@produto.Nome</h3>
+            <p>@produto.Descricao</p>
+            <h4 class="text-primary">@produto.PrecoFinal.ToString("C")</h4>
+            <button class="btn btn-success">Comprar</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ProdutoDTO? produto;
+
+    protected override async Task OnInitializedAsync()
+    {
+        produto = await Http.GetFromJsonAsync<ProdutoDTO>($"api/produtos/{Id}");
+    }
+}

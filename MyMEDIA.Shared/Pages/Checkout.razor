@@ -1,0 +1,82 @@
+﻿@page "/checkout"
+@using System.Net.Http.Json
+@using MyMEDIA.Shared.Models
+@using MyMEDIA.Shared.Services
+@inject CarrinhoState Carrinho
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<h3>📦 Finalizar Encomenda</h3>
+
+<EditForm Model="model" OnValidSubmit="Submeter">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Morada</label>
+        <InputText class="form-control" @bind-Value="model.Morada" />
+    </div>
+
+    <div class="mb-3">
+        <label>Cidade</label>
+        <InputText class="form-control" @bind-Value="model.Cidade" />
+    </div>
+
+    <div class="mb-3">
+        <label>Código-Postal</label>
+        <InputText class="form-control" @bind-Value="model.CodigoPostal" />
+    </div>
+
+    <div class="mb-3">
+        <label>Método de Pagamento</label>
+        <InputSelect class="form-select" @bind-Value="model.MetodoPagamento">
+            <option value="Cartão">Cartão</option>
+            <option value="MBWay">MBWay</option>
+            <option value="Referência">Referência Multibanco</option>
+        </InputSelect>
+    </div>
+
+    <div class="alert alert-info">
+        Total a pagar: <strong>@Carrinho.Total.ToString("C")</strong>
+    </div>
+
+    <button type="submit" class="btn btn-success">Confirmar Encomenda</button>
+    <a href="carrinho" class="btn btn-secondary">Voltar</a>
+</EditForm>
+
+@code {
+    private CheckoutModel model = new();
+
+    private async Task Submeter()
+    {
+        if (Carrinho.Itens.Count == 0) return;
+
+        var dto = new
+        {
+            Morada = model.Morada,
+            Cidade = model.Cidade,
+            CodigoPostal = model.CodigoPostal,
+            MetodoPagamento = model.MetodoPagamento,
+            Itens = Carrinho.Itens.Select(i => new
+            {
+                ProdutoId = i.ProdutoId,
+                Quantidade = i.Quantidade,
+                PrecoUnitario = i.Preco
+            }).ToList()
+        };
+
+        var response = await Http.PostAsJsonAsync("api/encomendas", dto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Carrinho.Limpar();
+            Nav.NavigateTo("/encomenda-sucesso");
+        }
+        else
+        {
+            var erro = await response.Content.ReadAsStringAsync();
+            // Mostrar erro simples
+            await JS.InvokeVoidAsync("alert", $"Erro: {erro}");
+        }
+    }
+}

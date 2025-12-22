@@ -1,0 +1,55 @@
+﻿@page "/produtos/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using MyMEDIA.Domain.Entities
+@using MyMEDIA.Domain.Enums
+@using MyMEDIA.Infraestrutura.Data
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+@inject NavigationManager Nav
+
+<h3>Editar Produto</h3>
+
+@if (prod == null) return;
+
+<EditForm Model="prod" OnValidSubmit="Save">
+    <div class="mb-3">
+        <label>Nome</label>
+        <input class="form-control" value="@prod.Nome" disabled />
+    </div>
+    <div class="mb-3">
+        <label>Preço Base</label>
+        <input class="form-control" value="@prod.PrecoBase.ToString("C")" disabled />
+    </div>
+    <div class="mb-3">
+        <label>Preço Final</label>
+        <InputNumber class="form-control" @bind-Value="prod.PrecoFinal" />
+    </div>
+    <div class="mb-3">
+        <label>Estado</label>
+        <InputSelect class="form-select" @bind-Value="prod.Estado">
+            <option value="@EstadoProdutoEnum.Pendente">Pendente</option>
+            <option value="@EstadoProdutoEnum.Ativo">Ativo</option>
+            <option value="@EstadoProdutoEnum.Inativo">Inativo</option>
+        </InputSelect>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="produtos" class="btn btn-secondary">Cancelar</a>
+</EditForm>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Produto? prod;
+
+    protected override async Task OnInitializedAsync()
+    {
+        prod = await Db.Produtos.FindAsync(Id);
+    }
+
+    private async Task Save()
+    {
+        if (prod == null) return;
+        Db.Produtos.Update(prod);
+        await Db.SaveChangesAsync();
+        Nav.NavigateTo("produtos");
+    }
+}

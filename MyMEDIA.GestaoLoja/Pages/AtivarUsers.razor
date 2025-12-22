@@ -1,0 +1,62 @@
+﻿@page "/ativar-users"
+@using Microsoft.AspNetCore.Identity
+@using MyMEDIA.Identity
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject UserManager<ApplicationUser> UserManager
+
+<h3>Ativação de Utilizadores</h3>
+
+@if (!users.Any())
+{
+    <p>Nenhum utilizador pendente.</p>
+}
+else
+{
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Tipo</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in users)
+            {
+                <tr>
+                    <td>@u.NomeCompleto</td>
+                    <td>@u.Email</td>
+                    <td>@u.TipoUtilizador</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" @onclick="() => Ativar(u.Id)">Ativar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ApplicationUser> users = new();
+
+    protected override async Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        users = await UserManager.Users
+            .Where(u => u.Estado == "Pendente")
+            .OrderBy(u => u.NomeCompleto)
+            .ToListAsync();
+    }
+
+    private async Task Ativar(string userId)
+    {
+        var user = await UserManager.FindByIdAsync(userId);
+        if (user == null) return;
+
+        user.Estado = "Ativo";
+        await UserManager.UpdateAsync(user);
+        await Load();
+    }
+}

@@ -1,0 +1,16 @@
+﻿@inherits LayoutComponentBase
+
+<div class="d-flex flex-column vh-100">
+    <nav class="navbar navbar-dark bg-primary">
+        <span class="navbar-brand">MyMEDIA</span>
+        <CarrinhoBadge />
+    </nav>
+
+    <div class="flex-grow-1 overflow-auto p-2">
+        @Body
+    </div>
+
+    <footer class="bg-light text-center p-2">
+        <small>© 2025 MyMEDIA</small>
+    </footer>
+</div>

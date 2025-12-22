@@ -1,0 +1,32 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MyMEDIA.Domain.Enums
+@using MyMEDIA.Infraestrutura.Data
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+
+<h3>Dashboard</h3>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="alert alert-warning">
+            Produtos Pendentes: <strong>@pendentes</strong>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-success">
+            Produtos Ativos: <strong>@ativos</strong>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int pendentes, ativos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pendentes = await Db.Produtos.CountAsync(p => p.Estado == EstadoProdutoEnum.Pendente);
+        ativos = await Db.Produtos.CountAsync(p => p.Estado == EstadoProdutoEnum.Ativo);
+    }
+}

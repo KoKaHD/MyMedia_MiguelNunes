@@ -1,0 +1,51 @@
+﻿@page "/registo"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<h3>Registo de Cliente</h3>
+
+<EditForm Model="model" OnValidSubmit="OnRegisto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Nome Completo</label>
+        <InputText class="form-control" @bind-Value="model.NomeCompleto" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="model.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="model.Password" />
+    </div>
+
+    <div class="mb-3">
+        <label>Confirmar Password</label>
+        <InputText type="password" class="form-control" @bind-Value="model.ConfirmaPassword" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Criar Conta</button>
+    <a href="login" class="btn btn-link">Já tenho conta</a>
+</EditForm>
+
+@code {
+    private RegistoRequest model = new();
+
+    private async Task OnRegisto()
+    {
+        var res = await Http.PostAsJsonAsync("api/auth/registo", model);
+        if (res.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/registo-sucesso");
+        }
+        else
+        {
+            var erro = await res.Content.ReadAsStringAsync();
+            await JS.InvokeVoidAsync("alert", $"Erro: {erro}");
+        }
+    }
+}

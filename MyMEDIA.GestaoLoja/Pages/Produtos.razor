@@ -1,0 +1,76 @@
+﻿@page "/produtos"
+@using Microsoft.EntityFrameworkCore
+@using MyMEDIA.Domain.Entities
+@using MyMEDIA.Domain.Enums
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+
+<h3>Gestão de Produtos</h3>
+
+<div class="mb-3">
+    <input class="form-control w-25 d-inline" @bind="filtroNome" placeholder="Nome" />
+    <select class="form-select w-25 d-inline ms-2" @bind="filtroEstado">
+        <option value="">Todos estados</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Ativo">Ativo</option>
+        <option value="Inativo">Inativo</option>
+    </select>
+    <button class="btn btn-sm btn-primary ms-2" @onclick="Load">Filtrar</button>
+</div>
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nome</th>
+            <th>Fornecedor</th>
+            <th>Preço Base</th>
+            <th>Preço Final</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in produtos)
+        {
+            <tr>
+                <td>@p.Id</td>
+                <td>@p.Nome</td>
+                <td>@p.Fornecedor.Nome</td>
+                <td>@p.PrecoBase.ToString("C")</td>
+                <td>@p.PrecoFinal.ToString("C")</td>
+                <td>
+                    <span class="badge bg-@(p.Estado == EstadoProdutoEnum.Pendente ? "warning" : "success")">
+                        @p.Estado
+                    </span>
+                </td>
+                <td>
+                    <a href="produtos/edit/@p.Id" class="btn btn-sm btn-primary">Editar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Produto> produtos = new();
+    private string filtroNome = "";
+    private string filtroEstado = "";
+
+    protected override async Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        IQueryable<Produto> q = Db.Produtos
+            .Include(p => p.Fornecedor)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(filtroNome))
+            q = q.Where(p => p.Nome.Contains(filtroNome));
+
+        if (Enum.TryParse<EstadoProdutoEnum>(filtroEstado, out var estado))
+            q = q.Where(p => p.Estado == estado);
+
+        produtos = await q.OrderBy(p => p.Nome).ToListAsync();
+    }
+}

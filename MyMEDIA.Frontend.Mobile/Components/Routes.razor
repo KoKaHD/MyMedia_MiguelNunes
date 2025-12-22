@@ -1,0 +1,18 @@
+﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+</Router>
+<Router AppAssembly="@typeof(App).Assembly"
+        AdditionalAssemblies="new[] { typeof(MyMEDIA.Shared.Pages.Index).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayoutMobile)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayoutMobile)">
+            <p>Página não encontrada</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+<Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="new[] { typeof(MyMEDIA.Shared.Pages.Carrinho).Assembly }"/>

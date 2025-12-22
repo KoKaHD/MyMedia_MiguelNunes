@@ -1,0 +1,26 @@
+﻿@page "/login"
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<h3>Login</h3>
+
+<EditForm Model="model" OnValidSubmit="OnLogin">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <input class="form-control" @bind="model.Email" placeholder="Email" />
+    </div>
+    <div class="mb-3">
+        <input type="password" class="form-control" @bind="model.Password" placeholder="Password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Entrar</button>
+</EditForm>
+
+@code {
+    private LoginRequest model = new();
+
+    private async Task OnLogin()
+    {
+        if (await Auth.LoginAsync(model.Email, model.Password))
+            Nav.NavigateTo("/");
+    }
+}

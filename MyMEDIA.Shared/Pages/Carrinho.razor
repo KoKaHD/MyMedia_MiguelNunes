@@ -1,0 +1,84 @@
+﻿    @page "/carrinho"
+    @using MyMEDIA.Shared.Models
+    @using MyMEDIA.Shared.Services
+    @inject CarrinhoState CarrinhoState
+    @inject NavigationManager Nav
+    @implements IDisposable
+
+    <h3>🛒 Meu Carrinho</h3>
+
+    @if (CarrinhoState.Itens.Count == 0)
+    {
+        <p>O carrinho está vazio.</p>
+    }
+    else
+    {
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Imagem</th>
+                    <th>Produto</th>
+                    <th>Preço</th>
+                    <th>Qtd</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in CarrinhoState.Itens)
+                {
+                    <tr>
+                        <td><img src="@item.ImagemUrl" width="60" /></td>
+                        <td>@item.Nome</td>
+                        <td>@item.Preco.ToString("C")</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => AlterarQtd(item, -1)">-</button>
+                            @item.Quantidade
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => AlterarQtd(item, 1)">+</button>
+                        </td>
+                        <td>@((item.Preco * item.Quantidade).ToString("C"))</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => CarrinhoState.Remover(item.ProdutoId)">❌</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="text-end">
+            <h4>Total: <strong>@CarrinhoState.Total.ToString("C")</strong></h4>
+            <button class="btn btn-success" @onclick="Finalizar">Finalizar Encomenda</button>
+        </div>
+    }
+
+    @code {
+        // Plan (pseudocode):
+        // - Rename the injected property so it doesn't conflict with the generated page class name.
+        // - Update all usages to the new injected property name.
+        // - Remove call to inaccessible NotifyChanged(); instead trigger UI refresh via StateHasChanged().
+        // - Keep using CarrinhoState.Remover(...) which is public and expected to raise OnChange.
+        // - Subscribe/unsubscribe to CarrinhoState.OnChange to keep external updates in sync.
+        private void AlterarQtd(CarrinhoItem item, int delta)
+        {
+            var nova = item.Quantidade + delta;
+            if (nova <= 0)
+                CarrinhoState.Remover(item.ProdutoId);
+            else
+                item.Quantidade = nova;
+
+            // Notify this component to re-render. CarrinhoState.NotifyChanged() was inaccessible,
+            // so call StateHasChanged() locally. CarrinhoState.Remover is expected to raise OnChange.
+            StateHasChanged();
+        }
+
+        private void Finalizar()
+        {
+            Nav.NavigateTo("/checkout");
+        }
+
+        protected override void OnInitialized() =>
+            CarrinhoState.OnChange += StateHasChanged;
+
+        public void Dispose() =>
+            CarrinhoState.OnChange -= StateHasChanged;
+    }

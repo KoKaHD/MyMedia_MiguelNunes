@@ -1,0 +1,16 @@
+﻿@using MyMEDIA.Shared.Services
+@inject CarrinhoState Carrinho
+@implements IDisposable
+
+<a href="carrinho" class="btn btn-sm btn-outline-primary position-relative">
+    🛒
+    <span class="badge bg-danger">@Carrinho.Quantidade</span>
+</a>
+
+@code {
+    protected override void OnInitialized() =>
+        Carrinho.OnChange += StateHasChanged;
+
+    public void Dispose() =>
+        Carrinho.OnChange -= StateHasChanged;
+}

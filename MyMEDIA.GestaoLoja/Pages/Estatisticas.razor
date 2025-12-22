@@ -1,0 +1,134 @@
+﻿@page "/estatisticas"
+@using MyMEDIA.Domain.Enums
+@using MyMEDIA.GestaoLoja.DTOs
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+
+<h3>Estatísticas</h3>
+
+@if (stats == null) return;
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="alert alert-primary">
+            <h5>@stats.TotalVendas</h5>
+            <small>Total Vendas</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="alert alert-success">
+            <h5>@stats.TotalFaturacao.ToString("C")</h5>
+            <small>Faturação</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="alert alert-info">
+            <h5>@stats.ProdutosAtivos</h5>
+            <small>Produtos Ativos</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="alert alert-warning">
+            <h5>@stats.ClientesAtivos</h5>
+            <small>Clientes Ativos</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Vendas por Mês</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Quantidade</th>
+                    <th>Faturação</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in stats.VendasMes)
+                {
+                    <tr>
+                        <td>@m.Mes</td>
+                        <td>@m.Quantidade</td>
+                        <td>@m.Faturacao.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h5>Top 5 Produtos</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in stats.Top5)
+                {
+                    <tr>
+                        <td>@p.Nome</td>
+                        <td>@p.Quantidade</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private StatsDto? stats;
+
+    protected override async Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        var hoje = DateTime.UtcNow;
+
+        // Total geral
+        var totalVendas = await Db.Encomendas.CountAsync(e => e.Pago);
+        var totalFaturacao = await Db.Encomendas.Where(e => e.Pago).SumAsync(e => e.Total);
+        var produtosAtivos = await Db.Produtos.CountAsync(p => p.Estado == EstadoProdutoEnum.Ativo);
+        var clientesAtivos = await Db.Users.CountAsync(u => u.TipoUtilizador == "Cliente" && u.Estado == "Ativo");
+
+        // Vendas por mês (últimos 12)
+        var vendasMes = await Db.Encomendas
+            .Where(e => e.Pago && e.DataCriacao >= hoje.AddMonths(-12))
+            .GroupBy(e => new { e.DataCriacao.Year, e.DataCriacao.Month })
+            .Select(g => new MesVendaDto
+            {
+                Mes = $"{g.Key.Month:00}/{g.Key.Year}",
+                Quantidade = g.Count(),
+                Faturacao = g.Sum(e => e.Total)
+            })
+            .OrderByDescending(m => m.Mes)
+            .ToListAsync();
+
+        // Top 5 produtos
+        var top5 = await Db.ItensEncomenda
+            .Where(i => i.Encomenda.Pago)
+            .GroupBy(i => i.Produto.Nome)
+            .Select(g => new ProdutoTopDto
+            {
+                Nome = g.Key,
+                Quantidade = g.Sum(i => i.Quantidade)
+            })
+            .OrderByDescending(p => p.Quantidade)
+            .Take(5)
+            .ToListAsync();
+
+        stats = new StatsDto
+        {
+            TotalVendas = totalVendas,
+            TotalFaturacao = totalFaturacao,
+            ProdutosAtivos = produtosAtivos,
+            ClientesAtivos = clientesAtivos,
+            VendasMes = vendasMes,
+            Top5 = top5
+        };
+    }
+}

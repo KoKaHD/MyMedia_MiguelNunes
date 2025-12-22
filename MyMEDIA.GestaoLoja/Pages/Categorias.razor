@@ -1,0 +1,56 @@
+﻿@page "/categorias"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MyMEDIA.Domain.Entities
+@using MyMEDIA.Infraestrutura.Data
+@attribute [Authorize(Policy = "AdminOrFunc")]
+@inject MyMediaDbContext Db
+
+<h3>Categorias</h3>
+
+<div class="mb-3">
+    <input class="form-control w-50 d-inline" @bind="novoNome" placeholder="Nova categoria" />
+    <button class="btn btn-primary ms-2" @onclick="Add">Adicionar</button>
+</div>
+
+<ul class="list-group w-50">
+    @foreach (var c in categorias)
+    {
+        <li class="list-group-item d-flex justify-content-between">
+            @c.Nome
+            <button class="btn btn-sm btn-danger" @onclick="() => Delete(c.Id)">❌</button>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Categoria> categorias = new();
+    private string novoNome = "";
+
+    protected override async Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        categorias = await Db.Categorias.OrderBy(c => c.Nome).ToListAsync();
+    }
+
+    private async Task Add()
+    {
+        if (string.IsNullOrWhiteSpace(novoNome)) return;
+        Db.Categorias.Add(new Categoria { Nome = novoNome });
+        await Db.SaveChangesAsync();
+        novoNome = "";
+        await Load();
+    }
+
+    private async Task Delete(int id)
+    {
+        var c = await Db.Categorias.FindAsync(id);
+        if (c != null)
+        {
+            Db.Categorias.Remove(c);
+            await Db.SaveChangesAsync();
+            await Load();
+        }
+    }
+}

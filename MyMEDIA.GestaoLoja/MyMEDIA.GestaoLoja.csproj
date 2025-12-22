@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyMEDIA.Domain\MyMEDIA.Domain.csproj" />
+    <ProjectReference Include="..\MyMEDIA.Identity\MyMEDIA.Identity.csproj" />
+    <ProjectReference Include="..\MyMEDIA.Infraestrutura\MyMEDIA.Infraestrutura.csproj" />
+    <ProjectReference Include="..\MyMEDIA.Shared\MyMEDIA.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

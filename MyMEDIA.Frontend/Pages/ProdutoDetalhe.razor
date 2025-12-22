@@ -1,0 +1,35 @@
+﻿@page "/produto/{id:int}"
+@inject ApiService Api
+@inject CarrinhoState Carrinho
+@inject NavigationManager Nav
+
+@if (prod == null) return;
+
+<div class="row">
+    <div class="col-md-6">
+        <img class="img-fluid" src="@prod.ImagemUrl" alt="@prod.Nome" />
+    </div>
+    <div class="col-md-6">
+        <h3>@prod.Nome</h3>
+        <p>@prod.Descricao</p>
+        <h4 class="text-primary">@prod.PrecoFinal.ToString("C")</h4>
+        <p>Stock: <strong>@prod.Stock</strong></p>
+        <button class="btn btn-success" @onclick="AddAndGo">Adicionar ao carrinho</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private ProdutoDTO? prod;
+
+    protected override async Task OnInitializedAsync()
+    {
+        prod = await Api.GetProdutoAsync(Id);
+    }
+
+    private void AddAndGo()
+    {
+        if (prod != null) Carrinho.Adicionar(prod);
+        Nav.NavigateTo("/carrinho");
+    }
+}

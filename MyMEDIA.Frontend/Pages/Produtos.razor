@@ -1,0 +1,38 @@
+﻿@page "/produtos"
+@page "/produtos/{CategoriaId:int}"
+@inject ApiService Api
+@inject CarrinhoState Carrinho
+
+<h3>Produtos</h3>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <input class="form-control" @bind="nomeFiltro" placeholder="Pesquisar..." />
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100" @onclick="Load">Pesquisar</button>
+    </div>
+</div>
+
+<div class="row">
+    @foreach (var p in produtos)
+    {
+        <div class="col-md-3 mb-3">
+            <ProdutoCard Produto="p" OnAdicionarCarrinho="Carrinho.Adicionar" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int? CategoriaId { get; set; }
+
+    private List<ProdutoDTO>? produtos;
+    private string nomeFiltro = "";
+
+    protected override async Task OnParametersSetAsync() => Load();
+
+    private async Task Load()
+    {
+        produtos = await Api.GetProdutosAsync(CategoriaId, nomeFiltro);
+    }
+}
