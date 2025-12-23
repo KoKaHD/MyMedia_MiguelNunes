@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MyMEDIA.Identity;
 using MyMEDIA.Infraestrutura.Data;
 using MyMEDIA.Shared.Services;
-
+using MyMEDIA.GestaoLoja.Areas.Identity;
 namespace MyMEDIA.GestaoLoja
 {
     public class Program

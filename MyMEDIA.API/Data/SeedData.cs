@@ -13,7 +13,7 @@ namespace MyMEDIA.API.Data
         {
             using var scope = services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<MyMediaDbContext>();
-            var um = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>;
+            var um = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             await db.Database.MigrateAsync();
             await SeedCategorias(db);

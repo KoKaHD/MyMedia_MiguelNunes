@@ -93,11 +93,11 @@ namespace MyMEDIA.API.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var fornId = await _db.Users
-                .Where(u => u.Id == userId && u.TipoUtilizador == "Fornecedor")
-                .Select(u => u.FornecedorId)
-                .FirstOrDefaultAsync();
+            .Where(u => u.Id == userId && u.TipoUtilizador == "Fornecedor")
+            .Select(u => u.FornecedorId)
+            .FirstOrDefaultAsync();
 
-            if (fornId == 0) return BadRequest("Fornecedor não associado.");
+            if (!fornId.HasValue) return BadRequest("Fornecedor não associado.");
 
             var prod = new Produto
             {
@@ -108,7 +108,7 @@ namespace MyMEDIA.API.Controllers
                 Stock = dto.Stock,
                 ImagemUrl = dto.ImagemUrl,
                 CategoriaId = dto.CategoriaId,
-                FornecedorId = fornId,
+                FornecedorId = fornId.Value,
                 Estado = EstadoProdutoEnum.Pendente
             };
 
